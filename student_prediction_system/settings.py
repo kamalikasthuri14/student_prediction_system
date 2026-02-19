@@ -13,7 +13,7 @@ SECRET_KEY = os.environ.get(
     "django-insecure-temporary-key-change-this"
 )
 
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['.onrender.com']
 
