@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get(
     "SECRET_KEY",
-    "django-insecure-temporary-key-change-in-production"
+    "django-insecure-temporary-key-change-this"
 )
 
 DEBUG = False
@@ -54,7 +54,7 @@ ROOT_URLCONF = 'student_prediction_system.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # Important
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -71,14 +71,13 @@ WSGI_APPLICATION = 'student_prediction_system.wsgi.application'
 
 
 # ===============================
-# DATABASE (Render Ready)
+# DATABASE (SQLite Safe for Render)
 # ===============================
 
 DATABASES = {
     'default': dj_database_url.config(
-        default='sqlite:///db.sqlite3',
-        conn_max_age=600,
-        ssl_require=True
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600
     )
 }
 
