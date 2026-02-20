@@ -1,1 +1,9 @@
-dj-database-url==...
+We can still add:
+
+🔥 Animated charts (Chart.js)
+🔥 Export Excel
+🔥 Email prediction result
+🔥 Admin analytics dashboard
+🔥 Dark mode
+🔥 REST API
+🔥 Deploy with PostgreSQL

@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import Group
 from .models import Student
 
 
@@ -41,10 +40,9 @@ def student_dashboard(request):
         assignment = float(request.POST.get("assignment"))
         final = float(request.POST.get("final"))
 
-        # ML Prediction
         prediction = model.predict([[attendance, internal, assignment, final]])
 
-        # RESULT LOGIC
+        # 🎨 RESULT LOGIC WITH COLORS
         if prediction[0] == 1:
             result = "High Chance of Success"
             color = "green"
@@ -52,7 +50,6 @@ def student_dashboard(request):
             result = "Low Chance of Success"
             color = "red"
 
-        # Save to Database
         Student.objects.create(
             name=name,
             attendance=attendance,
@@ -62,7 +59,7 @@ def student_dashboard(request):
             prediction_result=result
         )
 
-        # 📊 Individual Performance Graph
+        # 📊 GRAPH FOR RESULT PAGE
         plt.figure(figsize=(6, 4))
         plt.bar(
             ["Attendance", "Internal", "Assignment", "Final"],
@@ -94,7 +91,7 @@ def student_dashboard(request):
 
 
 # ===============================
-# TEACHER DASHBOARD (Ranking Added)
+# TEACHER DASHBOARD
 # ===============================
 @login_required
 def teacher_dashboard(request):
@@ -102,12 +99,8 @@ def teacher_dashboard(request):
     if not request.user.groups.filter(name='Teacher').exists():
         return redirect('student_dashboard')
 
-    # Ranking - Highest score first
-    students = Student.objects.all().order_by('-final_exam_score')
-
-    return render(request, "teacher_dashboard.html", {
-        "students": students
-    })
+    students = Student.objects.all()
+    return render(request, "teacher_dashboard.html", {"students": students})
 
 
 # ===============================
@@ -116,32 +109,33 @@ def teacher_dashboard(request):
 @login_required
 def history(request):
 
-    students = Student.objects.all().order_by('-final_exam_score')
+    students = Student.objects.all()
 
     names = [student.name for student in students]
     scores = [student.final_exam_score for student in students]
 
-    # Color based on score
+    # 🎨 Color Logic
     colors = []
     for score in scores:
         if score <= 40:
-            colors.append("red")
+            colors.append("red")      # Poor
         elif score <= 70:
-            colors.append("orange")
+            colors.append("brown")    # Average
         else:
-            colors.append("green")
+            colors.append("green")    # Good
 
-    # 📊 Create Bar + Pie Chart
+    # 📊 Create Combined Graph
     plt.figure(figsize=(12, 5))
 
     # Bar Chart
     plt.subplot(1, 2, 1)
     plt.bar(names, scores, color=colors)
-    plt.title("Bar Chart - Final Scores")
     plt.xlabel("Students")
-    plt.ylabel("Marks")
+    plt.ylabel("Final Exam Score")
+    plt.title("Students Performance History")
     plt.ylim(0, 100)
     plt.xticks(rotation=45)
+    plt.grid(axis='y')
 
     # Pie Chart
     plt.subplot(1, 2, 2)
