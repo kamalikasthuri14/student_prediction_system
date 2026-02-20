@@ -6,11 +6,16 @@ import matplotlib.pyplot as plt
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.units import inch
+from reportlab.lib.styles import getSampleStyleSheet
+
 from .models import Student
 
 
 # ===============================
-# LOAD ML MODEL
+# LOAD MODEL
 # ===============================
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 model_path = os.path.join(BASE_DIR, "model.pkl")
@@ -18,7 +23,7 @@ model = joblib.load(model_path)
 
 
 # ===============================
-# HOME REDIRECTION (Role Based)
+# HOME REDIRECT
 # ===============================
 @login_required
 def home(request):
@@ -42,7 +47,6 @@ def student_dashboard(request):
 
         prediction = model.predict([[attendance, internal, assignment, final]])
 
-        # 🎨 RESULT LOGIC WITH COLORS
         if prediction[0] == 1:
             result = "High Chance of Success"
             color = "green"
@@ -50,7 +54,7 @@ def student_dashboard(request):
             result = "Low Chance of Success"
             color = "red"
 
-        Student.objects.create(
+        student = Student.objects.create(
             name=name,
             attendance=attendance,
             internal_marks=internal,
@@ -59,17 +63,17 @@ def student_dashboard(request):
             prediction_result=result
         )
 
-        # 📊 GRAPH FOR RESULT PAGE
+        request.session['last_student_id'] = student.id
+
+        # 📊 GRAPH
         plt.figure(figsize=(6, 4))
         plt.bar(
             ["Attendance", "Internal", "Assignment", "Final"],
             [attendance, internal, assignment, final],
-            color=["blue", "orange", "purple", color]
+            color=["blue", "orange", "purple", "green"]
         )
         plt.ylim(0, 100)
         plt.title("Student Performance Overview")
-        plt.ylabel("Marks")
-        plt.grid(True)
 
         buffer = io.BytesIO()
         plt.savefig(buffer, format='png')
@@ -91,40 +95,32 @@ def student_dashboard(request):
 
 
 # ===============================
-# TEACHER DASHBOARD
-# ===============================
-@login_required
-def teacher_dashboard(request):
-
-    if not request.user.groups.filter(name='Teacher').exists():
-        return redirect('student_dashboard')
-
-    students = Student.objects.all()
-    return render(request, "teacher_dashboard.html", {"students": students})
-
-
-# ===============================
-# HISTORY WITH BAR + PIE CHART
+# HISTORY PAGE (BAR + PIE)
 # ===============================
 @login_required
 def history(request):
 
     students = Student.objects.all()
 
+    if not students.exists():
+        return render(request, "history.html", {
+            "students": students,
+            "graph": None
+        })
+
     names = [student.name for student in students]
     scores = [student.final_exam_score for student in students]
 
-    # 🎨 Color Logic
+    # 🎨 COLOR LOGIC
     colors = []
     for score in scores:
         if score <= 40:
-            colors.append("red")      # Poor
+            colors.append("red")       # Poor
         elif score <= 70:
-            colors.append("brown")    # Average
+            colors.append("brown")     # Average
         else:
-            colors.append("green")    # Good
+            colors.append("green")     # Good
 
-    # 📊 Create Combined Graph
     plt.figure(figsize=(12, 5))
 
     # Bar Chart
@@ -157,3 +153,40 @@ def history(request):
         "students": students,
         "graph": graph
     })
+
+
+# ===============================
+# PDF DOWNLOAD FUNCTION
+# ===============================
+@login_required
+def download_pdf(request):
+
+    student_id = request.session.get('last_student_id')
+
+    if not student_id:
+        return redirect('student_dashboard')
+
+    student = Student.objects.get(id=student_id)
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="Student_Report.pdf"'
+
+    doc = SimpleDocTemplate(response)
+    elements = []
+
+    styles = getSampleStyleSheet()
+    style = styles["Normal"]
+
+    elements.append(Paragraph("<b>Student Performance Report</b>", styles["Title"]))
+    elements.append(Spacer(1, 0.5 * inch))
+
+    elements.append(Paragraph(f"Name: {student.name}", style))
+    elements.append(Paragraph(f"Attendance: {student.attendance}", style))
+    elements.append(Paragraph(f"Internal Marks: {student.internal_marks}", style))
+    elements.append(Paragraph(f"Assignment Score: {student.assignment_score}", style))
+    elements.append(Paragraph(f"Final Exam Score: {student.final_exam_score}", style))
+    elements.append(Paragraph(f"Prediction Result: {student.prediction_result}", style))
+
+    doc.build(elements)
+
+    return response

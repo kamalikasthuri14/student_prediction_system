@@ -9,7 +9,18 @@
         <img src="data:image/png;base64,{{ graph }}" class="img-fluid">
     </div>
 
-    <a href="/" class="btn btn-primary mt-3">Predict Again</a>
+    <!-- Buttons Section -->
+    <div class="mt-4">
+
+        <a href="/" class="btn btn-secondary">
+            Predict Again
+        </a>
+
+        <a href="{% url 'download_pdf' %}" class="btn btn-success">
+            Download PDF Report
+        </a>
+
+    </div>
 </div>
 
 {% endblock %}
