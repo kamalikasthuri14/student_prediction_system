@@ -1,5 +1,5 @@
-from pathlib import Path
 import os
+from pathlib import Path
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -10,10 +10,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get(
     "SECRET_KEY",
-    "django-insecure-temporary-key-change-this"
+    "django-insecure-change-this-in-render-env"
 )
 
-DEBUG = True
+DEBUG = False  # MUST be False on Render
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com']
 
@@ -39,7 +39,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Required for Render
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -71,7 +71,7 @@ WSGI_APPLICATION = 'student_prediction_system.wsgi.application'
 
 
 # ===============================
-# DATABASE (SQLite Safe for Render)
+# DATABASE (SQLite for Render Free Plan)
 # ===============================
 
 DATABASES = {
@@ -105,7 +105,7 @@ USE_TZ = True
 
 
 # ===============================
-# STATIC FILES
+# STATIC FILES (IMPORTANT FOR RENDER)
 # ===============================
 
 STATIC_URL = '/static/'
@@ -125,9 +125,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # LOGIN SETTINGS
 # ===============================
 
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/login/'
-LOGIN_URL = '/login/'
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'

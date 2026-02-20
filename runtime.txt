@@ -7,3 +7,20 @@ We can still add:
 🔥 Dark mode
 🔥 REST API
 🔥 Deploy with PostgreSQL
+f you want, we can now add:
+
+🔐 Registration page
+
+👤 User profile section
+
+📊 Better dashboard statistics
+
+📥 Excel download
+
+🌐 Custom domain on Render
+
+🎨 Professional UI upgrade
+
+📱 Mobile responsive improvements
+
+🧠 Add ML prediction model
