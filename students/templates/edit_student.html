@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container">
+    <div class="card shadow p-4">
+        <h3>Edit Student</h3>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label>Name</label>
+                <input type="text" name="name" value="{{ student.name }}" class="form-control">
+            </div>
+
+            <div class="mb-3">
+                <label>Attendance</label>
+                <input type="number" name="attendance" value="{{ student.attendance }}" class="form-control">
+            </div>
+
+            <div class="mb-3">
+                <label>Internal Marks</label>
+                <input type="number" name="internal" value="{{ student.internal_marks }}" class="form-control">
+            </div>
+
+            <div class="mb-3">
+                <label>Assignment Score</label>
+                <input type="number" name="assignment" value="{{ student.assignment_score }}" class="form-control">
+            </div>
+
+            <div class="mb-3">
+                <label>Final Exam Score</label>
+                <input type="number" name="final" value="{{ student.final_exam_score }}" class="form-control">
+            </div>
+
+            <button type="submit" class="btn btn-success">Update</button>
+            <a href="{% url 'history' %}" class="btn btn-secondary">Cancel</a>
+
+        </form>
+    </div>
+</div>
+
+{% endblock %}

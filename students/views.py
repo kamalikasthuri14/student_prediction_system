@@ -102,28 +102,38 @@ def history(request):
 
     students = Student.objects.all()
 
-    if not students.exists():
+    total_students = students.count()
+
+    if total_students == 0:
         return render(request, "history.html", {
             "students": students,
-            "graph": None
+            "graph": None,
+            "total_students": 0,
+            "avg_score": 0,
+            "high_count": 0,
+            "low_count": 0
         })
 
     names = [student.name for student in students]
     scores = [student.final_exam_score for student in students]
 
+    avg_score = round(sum(scores) / total_students, 2)
+
+    high_count = students.filter(prediction_result="High Chance of Success").count()
+    low_count = students.filter(prediction_result="Low Chance of Success").count()
+
     # 🎨 COLOR LOGIC
     colors = []
     for score in scores:
         if score <= 40:
-            colors.append("red")       # Poor
+            colors.append("red")
         elif score <= 70:
-            colors.append("brown")     # Average
+            colors.append("brown")
         else:
-            colors.append("green")     # Good
+            colors.append("green")
 
     plt.figure(figsize=(12, 5))
 
-    # Bar Chart
     plt.subplot(1, 2, 1)
     plt.bar(names, scores, color=colors)
     plt.xlabel("Students")
@@ -131,9 +141,7 @@ def history(request):
     plt.title("Students Performance History")
     plt.ylim(0, 100)
     plt.xticks(rotation=45)
-    plt.grid(axis='y')
 
-    # Pie Chart
     plt.subplot(1, 2, 2)
     plt.pie(scores, labels=names, autopct='%1.1f%%')
     plt.title("Score Distribution")
@@ -151,9 +159,12 @@ def history(request):
 
     return render(request, "history.html", {
         "students": students,
-        "graph": graph
+        "graph": graph,
+        "total_students": total_students,
+        "avg_score": avg_score,
+        "high_count": high_count,
+        "low_count": low_count
     })
-
 
 # ===============================
 # PDF DOWNLOAD FUNCTION
@@ -190,3 +201,31 @@ def download_pdf(request):
     doc.build(elements)
 
     return response
+# ===============================
+# DELETE STUDENT
+# ===============================
+@login_required
+def delete_student(request, student_id):
+    student = Student.objects.get(id=student_id)
+    student.delete()
+    return redirect('history')
+# ===============================
+# EDIT STUDENT
+# ===============================
+@login_required
+def edit_student(request, student_id):
+    student = Student.objects.get(id=student_id)
+
+    if request.method == "POST":
+        student.name = request.POST.get("name")
+        student.attendance = request.POST.get("attendance")
+        student.internal_marks = request.POST.get("internal")
+        student.assignment_score = request.POST.get("assignment")
+        student.final_exam_score = request.POST.get("final")
+        student.save()
+
+        return redirect('history')
+
+    return render(request, "edit_student.html", {
+        "student": student
+    })
