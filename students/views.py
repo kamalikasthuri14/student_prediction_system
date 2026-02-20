@@ -9,6 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
 from .models import Student
 
+
 # ===============================
 # LOAD ML MODEL
 # ===============================
@@ -43,7 +44,7 @@ def student_dashboard(request):
         # ML Prediction
         prediction = model.predict([[attendance, internal, assignment, final]])
 
-        # 🎨 RESULT LOGIC WITH COLORS
+        # RESULT LOGIC
         if prediction[0] == 1:
             result = "High Chance of Success"
             color = "green"
@@ -61,7 +62,7 @@ def student_dashboard(request):
             prediction_result=result
         )
 
-        # 📊 CREATE COLORED GRAPH
+        # 📊 Individual Performance Graph
         plt.figure(figsize=(6, 4))
         plt.bar(
             ["Attendance", "Internal", "Assignment", "Final"],
@@ -93,7 +94,7 @@ def student_dashboard(request):
 
 
 # ===============================
-# TEACHER DASHBOARD
+# TEACHER DASHBOARD (Ranking Added)
 # ===============================
 @login_required
 def teacher_dashboard(request):
@@ -101,42 +102,54 @@ def teacher_dashboard(request):
     if not request.user.groups.filter(name='Teacher').exists():
         return redirect('student_dashboard')
 
-    students = Student.objects.all()
-    return render(request, "teacher_dashboard.html", {"students": students})
+    # Ranking - Highest score first
+    students = Student.objects.all().order_by('-final_exam_score')
+
+    return render(request, "teacher_dashboard.html", {
+        "students": students
+    })
 
 
 # ===============================
-# HISTORY WITH COLORED GRAPH
+# HISTORY WITH BAR + PIE CHART
 # ===============================
 @login_required
 def history(request):
 
-    students = Student.objects.all()
+    students = Student.objects.all().order_by('-final_exam_score')
 
     names = [student.name for student in students]
     scores = [student.final_exam_score for student in students]
 
-    # 🎨 Color based on score
+    # Color based on score
     colors = []
     for score in scores:
         if score <= 40:
             colors.append("red")
         elif score <= 70:
-            colors.append("brown")
+            colors.append("orange")
         else:
             colors.append("green")
 
-    # 📊 Create Improved Graph
-    plt.figure(figsize=(8, 5))
+    # 📊 Create Bar + Pie Chart
+    plt.figure(figsize=(12, 5))
+
+    # Bar Chart
+    plt.subplot(1, 2, 1)
     plt.bar(names, scores, color=colors)
+    plt.title("Bar Chart - Final Scores")
     plt.xlabel("Students")
-    plt.ylabel("Final Exam Score")
-    plt.title("Students Performance History")
+    plt.ylabel("Marks")
     plt.ylim(0, 100)
     plt.xticks(rotation=45)
-    plt.grid(axis='y')
+
+    # Pie Chart
+    plt.subplot(1, 2, 2)
+    plt.pie(scores, labels=names, autopct='%1.1f%%')
+    plt.title("Score Distribution")
 
     buffer = io.BytesIO()
+    plt.tight_layout()
     plt.savefig(buffer, format='png')
     buffer.seek(0)
 

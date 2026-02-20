@@ -1,8 +1,15 @@
-<h2 style="color: {{ color }};">
-    {{ result }}
-</h2>
+{% extends "base.html" %}
 
-<img src="data:image/png;base64,{{ graph }}" width="500">
+{% block content %}
 
-<br><br>
-<a href="/">Go Back</a>
+<div class="card shadow p-4">
+    <h2 style="color: {{ color }};">{{ result }}</h2>
+
+    <div class="mt-4">
+        <img src="data:image/png;base64,{{ graph }}" class="img-fluid">
+    </div>
+
+    <a href="/" class="btn btn-primary mt-3">Predict Again</a>
+</div>
+
+{% endblock %}
