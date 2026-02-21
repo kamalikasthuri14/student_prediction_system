@@ -15,11 +15,14 @@ from .models import Student
 
 
 # ===============================
-# LOAD MODEL
+# SAFE MODEL LOADING
 # ===============================
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 model_path = os.path.join(BASE_DIR, "model.pkl")
-model = joblib.load(model_path)
+
+model = None
+if os.path.exists(model_path):
+    model = joblib.load(model_path)
 
 
 # ===============================
@@ -45,14 +48,15 @@ def student_dashboard(request):
         assignment = float(request.POST.get("assignment"))
         final = float(request.POST.get("final"))
 
-        prediction = model.predict([[attendance, internal, assignment, final]])
-
-        if prediction[0] == 1:
-            result = "High Chance of Success"
-            color = "green"
+        # ✅ ML if available, otherwise fallback logic
+        if model:
+            prediction = model.predict([[attendance, internal, assignment, final]])
+            result = "High Chance of Success" if prediction[0] == 1 else "Low Chance of Success"
         else:
-            result = "Low Chance of Success"
-            color = "red"
+            average = (attendance + internal + assignment + final) / 4
+            result = "High Chance of Success" if average >= 50 else "Low Chance of Success"
+
+        color = "green" if "High" in result else "red"
 
         student = Student.objects.create(
             name=name,
@@ -70,7 +74,6 @@ def student_dashboard(request):
         plt.bar(
             ["Attendance", "Internal", "Assignment", "Final"],
             [attendance, internal, assignment, final],
-            color=["blue", "orange", "purple", "green"]
         )
         plt.ylim(0, 100)
         plt.title("Student Performance Overview")
@@ -95,13 +98,12 @@ def student_dashboard(request):
 
 
 # ===============================
-# HISTORY PAGE (BAR + PIE)
+# HISTORY PAGE
 # ===============================
 @login_required
 def history(request):
 
     students = Student.objects.all()
-
     total_students = students.count()
 
     if total_students == 0:
@@ -122,29 +124,11 @@ def history(request):
     high_count = students.filter(prediction_result="High Chance of Success").count()
     low_count = students.filter(prediction_result="Low Chance of Success").count()
 
-    # 🎨 COLOR LOGIC
-    colors = []
-    for score in scores:
-        if score <= 40:
-            colors.append("red")
-        elif score <= 70:
-            colors.append("brown")
-        else:
-            colors.append("green")
-
-    plt.figure(figsize=(12, 5))
-
-    plt.subplot(1, 2, 1)
-    plt.bar(names, scores, color=colors)
-    plt.xlabel("Students")
-    plt.ylabel("Final Exam Score")
-    plt.title("Students Performance History")
+    plt.figure(figsize=(10, 5))
+    plt.bar(names, scores)
     plt.ylim(0, 100)
     plt.xticks(rotation=45)
-
-    plt.subplot(1, 2, 2)
-    plt.pie(scores, labels=names, autopct='%1.1f%%')
-    plt.title("Score Distribution")
+    plt.title("Students Performance History")
 
     buffer = io.BytesIO()
     plt.tight_layout()
@@ -166,8 +150,9 @@ def history(request):
         "low_count": low_count
     })
 
+
 # ===============================
-# PDF DOWNLOAD FUNCTION
+# PDF DOWNLOAD
 # ===============================
 @login_required
 def download_pdf(request):
@@ -201,6 +186,8 @@ def download_pdf(request):
     doc.build(elements)
 
     return response
+
+
 # ===============================
 # DELETE STUDENT
 # ===============================
@@ -209,6 +196,8 @@ def delete_student(request, student_id):
     student = Student.objects.get(id=student_id)
     student.delete()
     return redirect('history')
+
+
 # ===============================
 # EDIT STUDENT
 # ===============================
