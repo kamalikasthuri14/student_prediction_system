@@ -48,16 +48,17 @@ def student_dashboard(request):
         assignment = float(request.POST.get("assignment"))
         final = float(request.POST.get("final"))
 
-        # ✅ ML if available, otherwise fallback logic
+        # ML Prediction (or fallback)
         if model:
             prediction = model.predict([[attendance, internal, assignment, final]])
             result = "High Chance of Success" if prediction[0] == 1 else "Low Chance of Success"
         else:
-            average = (attendance + internal + assignment + final) / 4
-            result = "High Chance of Success" if average >= 50 else "Low Chance of Success"
+            average_calc = (attendance + internal + assignment + final) / 4
+            result = "High Chance of Success" if average_calc >= 50 else "Low Chance of Success"
 
         color = "green" if "High" in result else "red"
 
+        # Save to DB
         student = Student.objects.create(
             name=name,
             attendance=attendance,
@@ -69,7 +70,10 @@ def student_dashboard(request):
 
         request.session['last_student_id'] = student.id
 
-        # 📊 GRAPH
+        # Calculate average
+        average = round((attendance + internal + assignment + final) / 4, 2)
+
+        # GRAPH
         plt.figure(figsize=(6, 4))
         plt.bar(
             ["Attendance", "Internal", "Assignment", "Final"],
@@ -91,7 +95,13 @@ def student_dashboard(request):
         return render(request, "result.html", {
             "result": result,
             "color": color,
-            "graph": graph
+            "graph": graph,
+            "attendance": attendance,
+            "internal": internal,
+            "assignment": assignment,
+            "final": final,
+            "average": average,
+            "name": name
         })
 
     return render(request, "home.html")
